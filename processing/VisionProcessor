@@ -1,0 +1,24 @@
+public class VisionProcessor {
+
+    private PhotonCamera camera1;
+    private PhotonPipelineResult camera1Pipeline;
+    private List<PhotonTrackedTarget> targets;
+    private PhotonTrackedTarget currentTarget;
+
+    public VisionProcessor() {}
+
+    public void init() {
+        camera1 = new PhotonCamera("camera_1");
+    }
+
+    public int getTargetID() {
+        camera1Pipeline = camera1.getLatestResult();
+        
+        if(camera1Pipeline.hasTargets()) {
+            targets = camera1Pipeline.getTargets();
+            currentTarget = targets.getBestTarget();
+            return currentTarget.getFuducialID();
+        }
+        return 0;     
+    }
+}
