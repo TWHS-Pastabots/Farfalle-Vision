@@ -4,10 +4,9 @@ import cv2
 import json
 import numpy
 import robotpy_apriltag
-import pynetworktables as nt
+from robotpy import pynetworktables as nt
 
 nt.initialize(server = "10.94.18.2")
-
 
 def main():
     width = 480
@@ -19,7 +18,6 @@ def main():
     img = numpy.zeros(shape=(height, width, 3), dtype=numpy.uint8)
 
     while True:
-
         frame_time, input_img = input_stream.grabFrame(img)
 
         x_list = []
@@ -50,5 +48,7 @@ def main():
             id_list.append(tag_id)
 
         nt.putNumberArray("IDs", id_list)
+        nt.putNumberArray("X Coords", x_list)
+        nt.putNumberArray("Y Coords", y_list)
         print(id_list)
 main()
