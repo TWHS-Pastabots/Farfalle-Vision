@@ -1,10 +1,12 @@
 from cscore import CameraServer
 
 import cv2
+import json
 import numpy
 import robotpy_apriltag
+import pynetworktables as nt
 
-
+nt.initialize(server = "10.94.18.2")
 
 
 def main():
@@ -47,5 +49,6 @@ def main():
             y_list.append((center.y - width / 2) / (width / 2))
             id_list.append(tag_id)
 
+        nt.putNumberArray("IDs", id_list)
         print(id_list)
 main()
