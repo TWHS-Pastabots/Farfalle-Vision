@@ -31,7 +31,7 @@ def main():
         x_list = []
         y_list = []
         id_list = []
-        homography_list = []
+        #homography_list = []
 
         if frame_time == 0:
             output_stream.notifyError(input_stream.getError())
@@ -51,17 +51,17 @@ def main():
         for tag in filter_tags:
             tag_id = tag.getId()
             center = tag.getCenter()
-            homography = tag.getHomographyMatrix()
+            #homography = tag.getHomography()
 
             x_list.append((center.x - width / 2) / (width / 2))
             y_list.append((center.y - width / 2) / (width / 2))
             id_list.append(tag_id)
-            homography_list.append(homography)
+            #homography_list.append(homography)
 
         vision_table.putNumberArray("IDs", id_list)
         vision_table.putNumberArray("X Coords", x_list)
         vision_table.putNumberArray("Y Coords", y_list)
-        vision_table.putNumberArray("Homography for euler angles", homography_list)
-        #print(id_list)
-        print(homography_list)
+        #vision_table.putNumberArray("Homography for euler angles", homography_list)
+        print(id_list)
+        #print(homography_list)
 main()
