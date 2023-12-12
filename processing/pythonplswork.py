@@ -18,18 +18,18 @@ time.sleep(0.5)
 #nt.initialize(server = "10.94.18.2")
 
 # Checks if a matrix is a valid rotation matrix.
-def isRotationMatrix(R) :
-    Rt = np.transpose(R)
-    shouldBeIdentity = np.dot(Rt, R)
-    I = np.identity(3, dtype = R.dtype)
-    n = np.linalg.norm(I - shouldBeIdentity)
-    return n < 1e-6
+#def isRotationMatrix(R) :
+ #   Rt = np.transpose(R)
+    # shouldBeIdentity = np.dot(Rt, R)
+    # I = np.identity(3, dtype = R.dtype)
+    # n = np.linalg.norm(I - shouldBeIdentity)
+    # return n < 1e-6
  
 # Calculates rotation matrix to euler angles
 # of the euler angles ( x and z are swapped ).
 def rotationMatrixToEulerAngles(R) :
  
-    assert(isRotationMatrix(R))
+    # assert(isRotationMatrix(R))
  
     sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
  
@@ -99,5 +99,10 @@ def main():
         vision_table.putNumberArray("X Euler Angles", x_euler_list)
         vision_table.putNumberArray("Y Euler Angles", y_euler_list)
         vision_table.putNumberArray("Z Euler Angles", z_euler_list)
+        print(x_euler_list)
+        print(y_euler_list)
+        print(z_euler_list)
+
         print(id_list)
+        print("\n")
 main()
