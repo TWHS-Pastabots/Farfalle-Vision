@@ -1,28 +1,20 @@
-import threading
+import time
 from cscore import CameraServer
 
 import cv2
 import json
 import numpy
 import robotpy_apriltag
-from ntcore import NetworkTables as nt
+from ntcore import NetworkTableInstance as nt
 
-cond = threading.Condition()
-notified = [False]
+inst = nt.getDefault()
+inst.startClient4("wpilibpi")
+inst.setServerTeam(9418)
+inst.startDSClient()
+vision_table = inst.getTable('Vision')
+time.sleep(0.5)
 
-def connectionListener(connected, info):
-    print(info, '; Connected=%s' % connected)
-    with cond:
-        notified[0] = True
-        cond.notify()
-
-nt.initialize(server = "10.94.18.2")
-nt.addConnectionListener(connectionListener, immediateNotify=True)
-
-with cond:
-    print("Waiting")
-    if not notified[0]:
-        cond.wait()
+#nt.initialize(server = "10.94.18.2")
 
 def main():
     width = 480
@@ -66,10 +58,10 @@ def main():
             id_list.append(tag_id)
             homography_list.append(homography)
 
-        nt.putNumberArray("IDs", id_list)
-        nt.putNumberArray("X Coords", x_list)
-        nt.putNumberArray("Y Coords", y_list)
-        nt.putNumberArray("Homography for euler angles", homography_list)
+        vision_table.putNumberArray("IDs", id_list)
+        vision_table.putNumberArray("X Coords", x_list)
+        vision_table.putNumberArray("Y Coords", y_list)
+        vision_table.putNumberArray("Homography for euler angles", homography_list)
         #print(id_list)
         print(homography_list)
 main()
