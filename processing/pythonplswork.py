@@ -1,12 +1,28 @@
+import threading
 from cscore import CameraServer
 
 import cv2
 import json
 import numpy
 import robotpy_apriltag
-#from robotpy import pynetworktables as nt
+from ntcore import NetworkTables as nt
 
-#nt.initialize(server = "10.94.18.2")
+cond = threading.Condition()
+notified = [False]
+
+def connectionListener(connected, info):
+    print(info, '; Connected=%s' % connected)
+    with cond:
+        notified[0] = True
+        cond.notify()
+
+nt.initialize(server = "10.94.18.2")
+nt.addConnectionListener(connectionListener, immediateNotify=True)
+
+with cond:
+    print("Waiting")
+    if not notified[0]:
+        cond.wait()
 
 def main():
     width = 480
@@ -50,10 +66,10 @@ def main():
             id_list.append(tag_id)
             homography_list.append(homography)
 
-        #nt.putNumberArray("IDs", id_list)
-        #nt.putNumberArray("X Coords", x_list)
-        #nt.putNumberArray("Y Coords", y_list)
-        #nt.putNumberArray("Homography for euler angles", homography_list)
+        nt.putNumberArray("IDs", id_list)
+        nt.putNumberArray("X Coords", x_list)
+        nt.putNumberArray("Y Coords", y_list)
+        nt.putNumberArray("Homography for euler angles", homography_list)
         #print(id_list)
         print(homography_list)
 main()
