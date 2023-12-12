@@ -4,9 +4,9 @@ import cv2
 import json
 import numpy
 import robotpy_apriltag
-from robotpy import pynetworktables as nt
+#from robotpy import pynetworktables as nt
 
-nt.initialize(server = "10.94.18.2")
+#nt.initialize(server = "10.94.18.2")
 
 def main():
     width = 480
@@ -23,6 +23,7 @@ def main():
         x_list = []
         y_list = []
         id_list = []
+        homography_list = []
 
         if frame_time == 0:
             output_stream.notifyError(input_stream.getError())
@@ -42,13 +43,17 @@ def main():
         for tag in filter_tags:
             tag_id = tag.getId()
             center = tag.getCenter()
+            homography = tag.getHomographyMatrix()
 
             x_list.append((center.x - width / 2) / (width / 2))
             y_list.append((center.y - width / 2) / (width / 2))
             id_list.append(tag_id)
+            homography_list.append(homography)
 
-        nt.putNumberArray("IDs", id_list)
-        nt.putNumberArray("X Coords", x_list)
-        nt.putNumberArray("Y Coords", y_list)
-        print(id_list)
+        #nt.putNumberArray("IDs", id_list)
+        #nt.putNumberArray("X Coords", x_list)
+        #nt.putNumberArray("Y Coords", y_list)
+        #nt.putNumberArray("Homography for euler angles", homography_list)
+        #print(id_list)
+        print(homography_list)
 main()
