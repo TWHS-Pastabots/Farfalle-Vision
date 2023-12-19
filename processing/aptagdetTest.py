@@ -11,40 +11,12 @@ from ntcore import NetworkTableInstance as nt
 inst = nt.getDefault()
 inst.startClient4("wpilibpi")
 inst.setServerTeam(9418)
-inst.startDSClient()
+# inst.startDSClient()
 vision_table = inst.getTable('Vision')
 time.sleep(0.5)
 
-#nt.initialize(server = "10.94.18.2")
+# cap = cv2.VideoCapture(0)
 
-# Checks if a matrix is a valid rotation matrix.
-#def isRotationMatrix(R) :
- #   Rt = np.transpose(R)
-    # shouldBeIdentity = np.dot(Rt, R)
-    # I = np.identity(3, dtype = R.dtype)
-    # n = np.linalg.norm(I - shouldBeIdentity)
-    # return n < 1e-6
- 
-# Calculates rotation matrix to euler angles
-# of the euler angles ( x and z are swapped ).
-# def rotationMatrixToEulerAngles(R) :
- 
-#     # assert(isRotationMatrix(R))
- 
-#     sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
- 
-#     singular = sy < 1e-6
- 
-#     if  not singular :
-#         x = math.atan2(R[2,1] , R[2,2])
-#         y = math.atan2(-R[2,0], sy)
-#         z = math.atan2(R[1,0], R[0,0])
-#     else :
-#         x = math.atan2(-R[1,2], R[1,1])
-#         y = math.atan2(-R[2,0], sy)
-#         z = 0
- 
-#     return np.array([x, y, z])
 
 def main():
     width = 480
@@ -56,9 +28,24 @@ def main():
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
     while True:
+        #     # Capture frame-by-frame
+        # ret, frame = cap.read()
+        # # if frame is read correctly ret is True
+        # if not ret:
+        #     print("Can't receive frame (stream end?). Exiting ...")
+        #     break
+        # # Our operations on the frame come here
+        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # # Display the resulting frame
+        # cv2.imshow('frame', gray)
+        # if cv2.waitKey(1) == ord('q'):
+        #     break
+        start_time = time.time
         frame_time, input_img = input_stream.grabFrame(img)
 
         id_list = []
+        centerx_list = []
+        centery_list = []
 
         if frame_time == 0:
             output_stream.notifyError(input_stream.getError())
@@ -72,13 +59,25 @@ def main():
         gray = cv2.cvtColor(input_img, cv2.COLOR_BGR2GRAY)
         tag_info = detector.detect(gray)
 
-        filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
-        filter_tags = [tag for tag in filter_tags if ((tag.getId() > 0) & (tag.getId() < 9))]
+        filter_tags = [
+            tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
+        filter_tags = [tag for tag in filter_tags if (
+            (tag.getId() > 0) & (tag.getId() < 9))]
 
         for tag in filter_tags:
             tag_id = tag.getId()
+            center = tag.getCenter()
+
             id_list.append(tag_id)
-           
+            centerx_list.append(center.x)
+            centery_list.append(center.y)
+        vision_table.putNumberArray("Tag Ids", id_list)
+
+        print(centerx_list)
+        print(centery_list)
         print(id_list)
-        print("\n")
+
+
 main()
+# cap.release()
+# cv2.destroyAllWindows()
