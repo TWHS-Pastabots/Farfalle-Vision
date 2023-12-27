@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Self
+#from typing import Self
 from cscore import CameraServer
 
 import cv2
@@ -75,7 +75,7 @@ def main():
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
     while True:
-        Self.intPub.setDefault(0)
+        #Self.intPub.setDefault(0)
 
         frame_time, input_img = input_stream.grabFrame(img)
 
@@ -110,25 +110,26 @@ def main():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-           # x_list.append((center.x - width / 2) / (width / 2))
-           # y_list.append((center.y - width / 2) / (width / 2))
-            id_list.append(tag_id)
+            x_list.append((center.x - width / 2) / (width / 2) * 1000)
+            y_list.append((center.y - width / 2) / (width / 2) * 1000)
+            id_list.append(tag_id * 1000)
            # x_euler_list.append(euler_list[0])
            # y_euler_list.append(euler_list[1])
            # z_euler_list.append(euler_list[2])
 
         vision_table.putNumberArray("IDs", id_list)
-        # vision_table.putNumberArray("X Coords", x_list)
-        # vision_table.putNumberArray("Y Coords", y_list)
+        vision_table.putNumberArray("X Coords", x_list)
+        vision_table.putNumberArray("Y Coords", y_list)
         # vision_table.putNumberArray("X Euler Angles", x_euler_list)
         # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
         # vision_table.putNumberArray("Z Euler Angles", z_euler_list)
 
-        print(x_euler_list)
-        print(y_euler_list)
-        print(z_euler_list)
-
+        #print(x_euler_list)
+        #print(y_euler_list)
+        #print(z_euler_list)
         print(id_list)
+        print(x_list)
+        print(y_list)
         print("\n")
 
 
