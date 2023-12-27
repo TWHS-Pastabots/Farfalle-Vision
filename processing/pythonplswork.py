@@ -1,5 +1,6 @@
 import math
 import time
+from typing import Self
 from cscore import CameraServer
 
 import cv2
@@ -74,7 +75,7 @@ def main():
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
     while True:
-        self.intPub.setDefault(0)
+        Self.intPub.setDefault(0)
 
         frame_time, input_img = input_stream.grabFrame(img)
 
@@ -104,7 +105,7 @@ def main():
 
         for tag in filter_tags:
             tag_id = tag.getId()
-            self.intPub.set(tag_id, 0)
+            # self.intPub.set(tag_id, 0)
             center = tag.getCenter()
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
