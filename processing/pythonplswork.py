@@ -124,16 +124,16 @@ def main():
         # vision_table.putNumberArray("X Euler Angles", x_euler_list)
         # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
 
-        if len(x_list) > 5:
+        if len(x_list) > 10:
            x_list.pop()
 
-        if len(y_list) > 5:
+        if len(y_list) > 10:
            y_list.pop()
 
         if len(id_list) > 5:
            x_list.pop()
 
-        if len(z_euler_list) > 5:
+        if len(z_euler_list) > 10:
            x_list.pop()
         
 
