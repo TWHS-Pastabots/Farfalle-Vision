@@ -12,7 +12,7 @@ from ntcore import NetworkTableInstance as nt
 
 
 inst = nt.getDefault()
-inst.startClient4("wpilibpi")
+inst.startClient4("visiontwhs")
 inst.setServerTeam(9418)
 inst.startDSClient()
 vision_table = inst.getTable('Vision')
