@@ -71,13 +71,9 @@ def main():
     #cs.startAutomaticCapture()
 
     usb1 = cs.startAutomaticCapture(name = "cam1", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0')
-    usb2 = cs.startAutomaticCapture(name = "cam2", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index1')
 
-    cam1_input_stream = usb1.getVideo()
-    cam1_output_stream = usb1.putVideo('Cam1', width, height)
-
-    cam2_input_stream = usb2.getVideo()
-    cam2_output_stream = usb2.putVideo('Cam2', width, height)
+    cam1_input_stream = cs.getVideo(camera = usb1)
+    cam1_output_stream = usb1.putVideo(name = 'cam1', width = width,  height = height)
 
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
@@ -85,7 +81,6 @@ def main():
         #Self.intPub.setDefault(0)
 
         cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
-        cam2_frame_time, cam2_input_img = cam2_input_stream.grabFrame(img)
 
         x_list = []
         y_list = []
@@ -99,34 +94,18 @@ def main():
             cam1_output_stream.notifyError(cam1_input_stream.getError())
             continue
 
-        if cam2_frame_time == 0:
-            cam2_input_stream.notifyError(cam2_input_stream.getError())
-            continue
-
         detector = robotpy_apriltag.AprilTagDetector()
         detector.addFamily("tag16h5")
 
         DETECTION_MARGIN_THRESHOLD = 100
 
         gray = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
-        tag_info = detector.detect(gray)
-
-        gray2 = cv2.cvtColor(cam2_input_img, cv2.COLOR_BGR2GRAY)
-        tag_info2 = detector.detect(gray)
-        
+        tag_info = detector.detect(gray)        
 
         filter_tags = [
             tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
         filter_tags = [tag for tag in filter_tags if (
             (tag.getId() > 0) & (tag.getId() < 9))]
-        
-        filter_tags2 = [
-            tag for tag in tag_info2 if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
-        filter_tags2 = [tag for tag in filter_tags if (
-            (tag.getId() > 0) & (tag.getId() < 9))]
-        
-        if len(filter_tags2) > 0:
-            print("Cam2 detects!")
 
         for tag in filter_tags:
             tag_id = tag.getId()
