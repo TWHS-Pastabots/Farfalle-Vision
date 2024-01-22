@@ -2,13 +2,12 @@ import math
 import time
 #from typing import Self
 from cscore import CameraServer as cs
-
+from keras.models import load_model  # TensorFlow is required for Keras to work
 import cv2
 import json
 import numpy as np
 import robotpy_apriltag
 from ntcore import NetworkTableInstance as nt
-
 
 inst = nt.getDefault()
 inst.startClient4("visiontwhs")
@@ -28,7 +27,6 @@ time.sleep(2.0)
 # nt.initialize(server = "10.94.18.2")
 
 # Checks if a matrix is a valid rotation matrix.
-
 
 def isRotationMatrix(R):
     Rt = np.transpose(R)
@@ -80,6 +78,14 @@ def main():
 
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
+    np.set_printoptions(suppress=True)
+    
+    # Load the model
+    model = load_model("C:/Users/TWHS Robotics/Documents/GitHub/Farfalle-Vision/processing/ringdetection/keras_Model.h5", compile=False)
+
+    # Load the labels
+    class_names = open("C:/Users/TWHS Robotics/Documents/GitHub/Farfalle-Vision/processing/ringdetection/labels.txt", "r").readlines()
+
     while True:
         #Self.intPub.setDefault(0)
 
@@ -98,6 +104,8 @@ def main():
             output_stream.notifyError(cam1_input_stream.getError())
             output_stream.notifyError(cam2_input_stream.getError())
             continue
+
+        
 
         detector = robotpy_apriltag.AprilTagDetector()
         detector.addFamily("tag16h5")
