@@ -91,6 +91,22 @@ def main():
 
         cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
         cam2_frame_time, cam2_input_img = cam2_input_stream.grabFrame(img)
+        
+        #setting up ring image for model
+        ring_image = cv2.resize(cam2_input_img, (224, 224), interpolation = cv2.INTER_AREA)
+        cv2.imshow("Webcam Image", ring_image)
+        ring_image = np.asarray(ring_image, dtype=np.float32).reshape(1, 224, 224, 3)
+        ring_image = (ring_image / 127.5) - 1
+        
+        #decisions from model
+        prediction = model.predict(ring_image)
+        index = np.argmax(prediction)
+        class_name = class_names[index]
+        confidence_score = prediction[0][index]
+
+        #printing
+        print("Class:", class_name[2:], end="")
+        print("Confidence Score:", str(np.round(confidence_score * 100))[:-2], "%")
 
         x_list = []
         y_list = []
@@ -104,8 +120,6 @@ def main():
             output_stream.notifyError(cam1_input_stream.getError())
             output_stream.notifyError(cam2_input_stream.getError())
             continue
-
-        
 
         detector = robotpy_apriltag.AprilTagDetector()
         detector.addFamily("tag16h5")
