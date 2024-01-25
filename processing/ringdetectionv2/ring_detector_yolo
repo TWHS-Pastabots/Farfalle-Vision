@@ -9,6 +9,9 @@ from ultralytics import YOLO
 
 ultralytics.check()
 
+detection_colors = []
+detection_colors.append(0, 255, 40)
+
 modelPath = "/ringdetectionv2/ringdetector.pt"
 
 def main():
@@ -29,5 +32,15 @@ def main():
     while True:
         cam2_input_img = cam2_input_stream.grabFrame(img)
         detect_params = model.predict(source = cam2_input_img, conf = 0.8, save = False)
+
+        print(detect_params[0].numpy())
+        detect_params = detect_params[0].numpy()
+
+        if len(detect_params > 0):
+            for param in detect_params:
+                ring_img = cv2.rectangle(cam2_input_img, int(param[0]), int(param[1]), int(param[2]), int(param[3]), detection_colors[0], 3)
+        
+        cv2.imshow("rings", ring_img)
+
 
         
