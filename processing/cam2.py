@@ -2,6 +2,8 @@ import math
 import time
 #from typing import Self
 from cscore import CameraServer as cs
+from cscore import VideoSource as vs
+from cscore import MjpegServer as MJServer
 
 import cv2
 import json
@@ -24,6 +26,11 @@ def main():
 
     #cs.startAutomaticCapture()
     usb2 = cs.startAutomaticCapture(name = "cam2", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index1')
+    usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+
+    #To view stream type hostname + port into browser? right?
+    mj = MJServer("cam2_stream", 1185)
+    mj.setSource(usb2)
 
     cam2_input_stream = cs.getVideo(camera = usb2)
     #cam2_output_stream = cs.putVideo(name = 'cam2', width = width, height = height)
