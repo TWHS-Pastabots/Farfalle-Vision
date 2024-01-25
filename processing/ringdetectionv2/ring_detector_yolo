@@ -1,0 +1,33 @@
+import math
+import time
+from cscore import CameraServer as cs
+import cv2
+import numpy as np
+import robotpy_apriltag
+import ultralytics
+from ultralytics import YOLO
+
+ultralytics.check()
+
+modelPath = "/ringdetectionv2/ringdetector.pt"
+
+def main():
+    height = 480
+    width = 640
+
+    usb2 = cs.startAutomaticCapture(name = "cam2", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0')
+    time.sleep(1.25)
+
+    cam2_input_stream = cs.getVideo(camera = usb2)
+    img = np.zeros(shape = (height, width, 3), dtype=np.uint8)
+    
+    #remove scientific notation
+    np.set_printoptions(suppress=True)
+
+    model = YOLO(modelPath, "v8")
+
+    while True:
+        cam2_input_img = cam2_input_stream.grabFrame(img)
+        detect_params = model.predict(source = cam2_input_img, conf = 0.8, save = False)
+
+        
