@@ -70,10 +70,10 @@ def main():
 
     #cs.startAutomaticCapture()
 
-    usb1 = cs.startAutomaticCapture(name = "cam1", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0')
+    usb1 = cs.startAutomaticCapture(name = "cam1", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0")
 
     cam1_input_stream = cs.getVideo(camera = usb1)
-    cam1_output_stream = usb1.putVideo(name = 'cam1', width = width,  height = height)
+    cam1_output_stream = cs.putVideo(name = 'cam1', width = width,  height = height)
 
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
@@ -81,6 +81,7 @@ def main():
         #Self.intPub.setDefault(0)
 
         cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
+        cv2.imshow("frame", cam1_input_img)
 
         x_list = []
         y_list = []
@@ -100,7 +101,9 @@ def main():
         DETECTION_MARGIN_THRESHOLD = 100
 
         gray = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
-        tag_info = detector.detect(gray)        
+        tag_info = detector.detect(gray)
+        #cv2.imshow("Grayscale", gray)
+        cv2.waitKey(1)
 
         filter_tags = [
             tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]

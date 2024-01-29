@@ -4,6 +4,7 @@ import time
 from cscore import CameraServer as cs
 from cscore import VideoSource as vs
 from cscore import MjpegServer as MJServer
+from cscore import VideoMode as vm
 
 import cv2
 import json
@@ -25,23 +26,25 @@ def main():
     height = 360
 
     #cs.startAutomaticCapture()
-    usb2 = cs.startAutomaticCapture(name = "cam2", path ='/dev/v41/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index1')
-    usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+    usb2 = cs.startAutomaticCapture(name = "cam2", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0")
+    #usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
 
     #To view stream type hostname + port into browser? right?
     mj = MJServer("cam2_stream", 1185)
     mj.setSource(usb2)
 
     cam2_input_stream = cs.getVideo(camera = usb2)
-    #cam2_output_stream = cs.putVideo(name = 'cam2', width = width, height = height)
+    cam2_output_stream = cs.putVideo(name = 'cam2', width = width, height = height)
 
     img = np.zeros(shape=(height, width, 3), dtype=np.uint8)
 
     while True:
         cam2_frame_time, cam2_input_img = cam2_input_stream.grabFrame(img)
-
+        cv2.imshow("frame", cam2_input_img)
+        cv2.waitKey(1)
+        
         if cam2_frame_time == 0:
-            cam2_input_stream.notifyError(cam2_input_stream.getError())
+            cam2_output_stream.notifyError(cam2_input_stream.getError())
             continue
 
         detector = robotpy_apriltag.AprilTagDetector()
