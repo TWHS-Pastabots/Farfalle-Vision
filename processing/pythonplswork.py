@@ -34,9 +34,9 @@ cam1_input_stream = cs.getVideo(camera = usb1)
 cam2_input_stream = cs.getVideo(camera = usb2)
 
 #mjpeg server for cam2 raw stream display
-mj = MJServer("cam1_stream", 1185)
-mj.setSource(usb1)
-mjstring1 = "mjpeg:http://visiontwhs.local:1185/?action=stream"
+#mj = MJServer("cam1_stream", 1185)
+#mj.setSource(usb1)
+#mjstring1 = "mjpeg:http://visiontwhs.local:1185/?action=stream"
 
 #setting up second mjpeg server sink -> source -> mjepg server for cam2
 cam2_sink = sink("cam2_sink")
@@ -94,7 +94,7 @@ def cam1TagDetect():
         if cam1_frame_time == 0:
             output_stream.notifyError(cam1_input_stream.getError())
 
-        vision_table.putString("Cam1 Stream", mjstring1)
+        #vision_table.putString("Cam1 Stream", mjstring1)
 
         #setting up tag info lists           
         x_list = []
@@ -103,6 +103,7 @@ def cam1TagDetect():
         x_euler_list = []
         y_euler_list = []
         z_euler_list = []
+        bestID = -1
 
         #set up tag detector
         detector = robotpy_apriltag.AprilTagDetector()
@@ -117,7 +118,14 @@ def cam1TagDetect():
         filter_tags = [
             tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
         filter_tags = [tag for tag in filter_tags if (
-            (tag.getId() > 0) & (tag.getId() < 16))]
+            (tag.getId() > 0) & (tag.getId() < 17))]
+        
+        if len(filter_tags) > 0:
+            bestTag = filter_tags[0]
+            for tag in filter_tags:
+                if tag.getDecisionMargin() > bestTag.getDecisionMargin():
+                    bestTag = tag
+            bestID = bestTag.getDecisionMargin()
 
         #send detections info over network tables
         for tag in filter_tags:
@@ -130,15 +138,8 @@ def cam1TagDetect():
             y_list.insert(0, (center.x - width / 2) / (width / 2) * 1000)
             id_list.insert(0, tag_id * 1000)
             z_euler_list.insert(0, euler_list[2] * 1000)
-            # x_euler_list.append(euler_list[0])
-            # y_euler_list.append(euler_list[1])
-
-            vision_table.putNumberArray("IDs", id_list)
-            vision_table.putNumberArray("X Coords", x_list)
-            vision_table.putNumberArray("Y Coords", y_list)
-            vision_table.putNumberArray("Z Euler Angles", z_euler_list)
-            # vision_table.putNumberArray("X Euler Angles", x_euler_list)
-            # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
+            # x_euler_list.insert(euler_list[0] * 1000)
+            # y_euler_list.insert(euler_list[1] * 1000)
 
             #pop lists in case they get too big to avoid memory issues
             if len(x_list) > 10:
@@ -153,6 +154,16 @@ def cam1TagDetect():
             if len(z_euler_list) > 10:
                 x_list.pop()
 
+
+        vision_table.putNumberArray("IDs", id_list)
+        vision_table.putNumberArray("X Coords", x_list)
+        vision_table.putNumberArray("Y Coords", y_list)
+        vision_table.putNumberArray("Z Euler Angles", z_euler_list)
+        vision_table.putNumber("Best Tag ID", bestID)
+        # vision_table.putNumberArray("X Euler Angles", x_euler_list)
+        # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
+
+        
         #print(x_euler_list)
         #print(y_euler_list)
         #print(z_euler_list)
@@ -192,14 +203,14 @@ def cam2RingDetect():
                 ring_center_x.append((l + r) / 2.0)
                 ring_center_y.append((b + t) / 2.0)
             
-            vision_table.putNumberArray("Ring Center X Coords", ring_center_x)
-            vision_table.putNumberArray("Ring Center Y Coords", ring_center_y)
+        vision_table.putNumberArray("Ring Center X Coords", ring_center_x)
+        vision_table.putNumberArray("Ring Center Y Coords", ring_center_y)
 
-            if len(ring_center_x) > 5:
-                ring_center_x.pop()
+        if len(ring_center_x) > 5:
+            ring_center_x.pop()
 
-            if len(ring_center_y) > 5:
-                ring_center_y.pop()
+        if len(ring_center_y) > 5:
+            ring_center_y.pop()
             
             #cam2_source.putFrame(cam2_input_img)
             
@@ -208,7 +219,7 @@ def cam2RingDetect():
 
 def main():
         #set up threads and run
-        t1 = threading.Thread(target = cam1TagDetect, name = "cam1 thead")
+        t1 = threading.Thread(target = cam1TagDetect, name = "cam1 thread")
         t2 = threading.Thread(target = cam2RingDetect, name = "cam2 thread")
 
         t2.start()
