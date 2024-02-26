@@ -107,7 +107,7 @@ def cam1TagDetect():
 
         #set up tag detector
         detector = robotpy_apriltag.AprilTagDetector()
-        detector.addFamily("tag16h5")
+        detector.addFamily("tag36h11")
         DETECTION_MARGIN_THRESHOLD = 100
 
         #grayscale frame + detect
