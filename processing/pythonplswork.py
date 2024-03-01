@@ -108,11 +108,12 @@ def cam1TagDetect():
         #set up tag detector
         detector = robotpy_apriltag.AprilTagDetector()
         detector.addFamily("tag36h11")
-        DETECTION_MARGIN_THRESHOLD = 100
+        DETECTION_MARGIN_THRESHOLD = 75
 
         #grayscale frame + detect
         gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
-        tag_info = detector.detect(gray_img)
+        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharp_img = cv2.filter2D(gray_img, -1, kernel)
 
         #filter out bad detections (low decision margin + out of bounds IDs)
         filter_tags = [
@@ -216,6 +217,95 @@ def cam2RingDetect():
             
             #cv2.imshow("Rings", cam2_input_img)
             #cv2.waitKey(1)
+
+#detects apriltags for cam1
+def cam3TagDetect():
+    while True:
+        #change to cam3
+        cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
+
+        if cam1_frame_time == 0:
+            output_stream.notifyError(cam1_input_stream.getError())
+
+        #vision_table.putString("Cam1 Stream", mjstring1)
+
+        #setting up tag info lists           
+        x_list = []
+        y_list = []
+        id_list = []
+        x_euler_list = []
+        y_euler_list = []
+        z_euler_list = []
+        bestID = -1
+
+        #set up tag detector
+        detector = robotpy_apriltag.AprilTagDetector()
+        detector.addFamily("tag36h11")
+        DETECTION_MARGIN_THRESHOLD = 75
+
+        #grayscale frame + detect
+        gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
+        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharp_img = cv2.filter2D(gray_img, -1, kernel)
+
+        #filter out bad detections (low decision margin + out of bounds IDs)
+        filter_tags = [
+            tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
+        filter_tags = [tag for tag in filter_tags if (
+            (tag.getId() > 0) & (tag.getId() < 17))]
+        
+        if len(filter_tags) > 0:
+            bestTag = filter_tags[0]
+            for tag in filter_tags:
+                if tag.getDecisionMargin() > bestTag.getDecisionMargin():
+                    bestTag = tag
+            bestID = bestTag.getDecisionMargin()
+
+        #send detections info over network tables
+        for tag in filter_tags:
+            tag_id = tag.getId()
+            center = tag.getCenter()
+            homography = tag.getHomographyMatrix()
+            euler_list = rotationMatrixToEulerAngles(homography)
+
+            x_list.insert(0, (center.y - width / 2) / (width / 2) * 1000)
+            y_list.insert(0, (center.x - width / 2) / (width / 2) * 1000)
+            id_list.insert(0, tag_id * 1000)
+            z_euler_list.insert(0, euler_list[2] * 1000)
+            # x_euler_list.insert(euler_list[0] * 1000)
+            # y_euler_list.insert(euler_list[1] * 1000)
+
+            #pop lists in case they get too big to avoid memory issues
+            if len(x_list) > 10:
+                x_list.pop()
+
+            if len(y_list) > 10:
+                y_list.pop()
+
+            if len(id_list) > 5:
+                x_list.pop()
+
+            if len(z_euler_list) > 10:
+                x_list.pop()
+
+
+        vision_table.putNumberArray("Front IDs", id_list)
+        vision_table.putNumberArray("Front X Coords", x_list)
+        vision_table.putNumberArray("Front Y Coords", y_list)
+        vision_table.putNumberArray("Front Z Euler Angles", z_euler_list)
+        vision_table.putNumber("Front Best Tag ID", bestID)
+        # vision_table.putNumberArray("X Euler Angles", x_euler_list)
+        # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
+
+        
+        #print(x_euler_list)
+        #print(y_euler_list)
+        #print(z_euler_list)
+        print(id_list)
+        #print(x_list)
+        #print(y_list)
+        #print(z_euler_list)
+        #print("\n")
 
 def main():
         #set up threads and run
