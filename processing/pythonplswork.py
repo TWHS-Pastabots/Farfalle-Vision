@@ -27,8 +27,11 @@ height = 480
 #set up cameras
 usb1 = cs.startAutomaticCapture(name = "cam1", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0")
 usb1.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+usb1.setResolution(640,480)
 usb2 = cs.startAutomaticCapture(name = "cam2", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0")
 usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+usb1.setResolution(640,480)
+
 
 cam1_input_stream = cs.getVideo(camera = usb1)
 cam2_input_stream = cs.getVideo(camera = usb2)
@@ -108,12 +111,11 @@ def cam1TagDetect():
         #set up tag detector
         detector = robotpy_apriltag.AprilTagDetector()
         detector.addFamily("tag36h11")
-        DETECTION_MARGIN_THRESHOLD = 75
+        DETECTION_MARGIN_THRESHOLD = 90
 
         #grayscale frame + detect
         gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
-        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-        sharp_img = cv2.filter2D(gray_img, -1, kernel)
+        tag_info = detector.detect(gray_img)
 
         #filter out bad detections (low decision margin + out of bounds IDs)
         filter_tags = [
@@ -245,8 +247,7 @@ def cam3TagDetect():
 
         #grayscale frame + detect
         gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
-        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-        sharp_img = cv2.filter2D(gray_img, -1, kernel)
+        tag_info = detector.detect(gray_img)
 
         #filter out bad detections (low decision margin + out of bounds IDs)
         filter_tags = [
