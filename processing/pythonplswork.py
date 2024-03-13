@@ -118,10 +118,8 @@ def cam1TagDetect():
         tag_info = detector.detect(gray_img)
 
         #filter out bad detections (low decision margin + out of bounds IDs)
-        filter_tags = [
-            tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
-        filter_tags = [tag for tag in filter_tags if (
-            (tag.getId() > 0) & (tag.getId() < 17))]
+        filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
+        filter_tags = [tag for tag in filter_tags if ((tag.getId() > 0) & (tag.getId() < 17))]
         
         if len(filter_tags) > 0:
             bestTag = filter_tags[0]
@@ -137,10 +135,10 @@ def cam1TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y - width / 2) / (width / 2) * 1000)
-            y_list.insert(0, (center.x - width / 2) / (width / 2) * 1000)
+            x_list.insert(0, (center.y)
+            y_list.insert(0, (center.x)
             id_list.insert(0, tag_id)
-            z_euler_list.insert(0, euler_list[2] * 1000)
+            z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
             # y_euler_list.insert(euler_list[1] * 1000)
 
@@ -250,10 +248,8 @@ def cam3TagDetect():
         tag_info = detector.detect(gray_img)
 
         #filter out bad detections (low decision margin + out of bounds IDs)
-        filter_tags = [
-            tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
-        filter_tags = [tag for tag in filter_tags if (
-            (tag.getId() > 0) & (tag.getId() < 17))]
+        filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
+        filter_tags = [tag for tag in filter_tags if ((tag.getId() > 0) & (tag.getId() < 17))]
         
         if len(filter_tags) > 0:
             bestTag = filter_tags[0]
@@ -269,10 +265,10 @@ def cam3TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y - width / 2) / (width / 2) * 1000)
-            y_list.insert(0, (center.x - width / 2) / (width / 2) * 1000)
-            id_list.insert(0, tag_id * 1000)
-            z_euler_list.insert(0, euler_list[2] * 1000)
+            x_list.insert(0, (center.y)
+            y_list.insert(0, (center.x)
+            id_list.insert(0, tag_id)
+            z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
             # y_euler_list.insert(euler_list[1] * 1000)
 
@@ -283,8 +279,8 @@ def cam3TagDetect():
             if len(y_list) > 10:
                 y_list.pop()
 
-            if len(id_list) > 5:
-                x_list.pop()
+            if len(id_list) > 10:
+                id_list.pop()
 
             if len(z_euler_list) > 10:
                 x_list.pop()
