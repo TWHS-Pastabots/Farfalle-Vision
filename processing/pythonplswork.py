@@ -139,7 +139,7 @@ def cam1TagDetect():
 
             x_list.insert(0, (center.y - width / 2) / (width / 2) * 1000)
             y_list.insert(0, (center.x - width / 2) / (width / 2) * 1000)
-            id_list.insert(0, tag_id * 1000)
+            id_list.insert(0, tag_id)
             z_euler_list.insert(0, euler_list[2] * 1000)
             # x_euler_list.insert(euler_list[0] * 1000)
             # y_euler_list.insert(euler_list[1] * 1000)
@@ -151,11 +151,11 @@ def cam1TagDetect():
             if len(y_list) > 10:
                 y_list.pop()
 
-            if len(id_list) > 5:
-                x_list.pop()
+            if len(id_list) > 10:
+                id_list.pop()
 
             if len(z_euler_list) > 10:
-                x_list.pop()
+                id_list.pop()
 
 
         vision_table.putNumberArray("IDs", id_list)
