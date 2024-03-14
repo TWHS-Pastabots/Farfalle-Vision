@@ -89,6 +89,28 @@ def rotationMatrixToEulerAngles(R):
 
     return np.array([x, y, z])
 
+
+Tag_size_meters = 0.1
+Focal_Length_Pixels = 600
+FOV_horizontal_degrees = 60  # Horizontal field of view of the camera in degrees
+FOV_vertical_degrees = 40    # Vertical field of view of the camera in degrees
+
+def calcDistanceToTag(x_tag_pixels, y_tag_pixels):
+    # Calculate the angle of the AprilTag from the center of the image
+    angle_x = (x_tag_pixels - width / 2) * (FOV_horizontal_degrees / width)
+    angle_y = (y_tag_pixels - height / 2) * (FOV_vertical_degrees / height)
+
+    # Calculate the distance to the AprilTag using trigonometry (assuming small angles)
+    distance_x = Tag_size_meters / (2 * math.tan(math.radians(angle_x / 2)))
+    distance_y = Tag_size_meters / (2 * math.tan(math.radians(angle_y / 2)))
+
+    # Average the distances from both horizontal and vertical angles
+    distance = (distance_x + distance_y) / 2
+
+     #hoping this works and ideally should return the distance to the AprilTag based on the camera
+    return distance
+
+
 #detects apriltags for cam1
 def cam1TagDetect():
     while True:
@@ -135,8 +157,8 @@ def cam1TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y)
-            y_list.insert(0, (center.x)
+            x_list.insert(0, (center.y))
+            y_list.insert(0, (center.x))
             id_list.insert(0, tag_id)
             z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
@@ -154,6 +176,8 @@ def cam1TagDetect():
 
             if len(z_euler_list) > 10:
                 id_list.pop()
+
+            
 
 
         vision_table.putNumberArray("IDs", id_list)
@@ -173,6 +197,16 @@ def cam1TagDetect():
         #print(y_list)
         #print(z_euler_list)
         #print("\n")
+
+        if len(x_list) >= 2:
+            avg_x = sum(x_list) / len(x_list)
+            avg_y = sum(y_list) / len(y_list)
+
+            # Calculate distance to tag
+            distance = calcDistanceToTag(avg_x, avg_y)
+            vision_table.putNumber("DistanceToTag", distance)
+    
+
   
 def cam2RingDetect():
     while True:
@@ -265,8 +299,8 @@ def cam3TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y)
-            y_list.insert(0, (center.x)
+            x_list.insert(0, (center.y))
+            y_list.insert(0, (center.x))
             id_list.insert(0, tag_id)
             z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
@@ -303,6 +337,9 @@ def cam3TagDetect():
         #print(y_list)
         #print(z_euler_list)
         #print("\n")
+
+
+      
 
 def main():
         #set up threads and run
