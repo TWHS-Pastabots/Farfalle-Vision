@@ -10,7 +10,9 @@ from cscore import CvSource as source
 from cscore import VideoMode
 import cv2
 from ultralytics import YOLO
-import robotpy_apriltag
+import robotpy_apriltag as rptag
+from wpimath import Transform3d;
+from wpimath import Rotation2d;
 from ntcore import NetworkTableInstance as nt
 
 #set up network tables
@@ -36,18 +38,9 @@ usb1.setResolution(640,480)
 cam1_input_stream = cs.getVideo(camera = usb1)
 cam2_input_stream = cs.getVideo(camera = usb2)
 
-#mjpeg server for cam2 raw stream display
-#mj = MJServer("cam1_stream", 1185)
-#mj.setSource(usb1)
-#mjstring1 = "mjpeg:http://visiontwhs.local:1185/?action=stream"
-
-#setting up second mjpeg server sink -> source -> mjepg server for cam2
+#setting up sink for cam2
 cam2_sink = sink("cam2_sink")
 cam2_sink.setSource(usb2)
-
-#cam2_source = source("cam2_source", pixelFormat = VideoMode.PixelFormat.kMJPEG, width = width, height = height, fps  = 10)
-#mj2 = MJServer("cam2_processed", 1186)
-#mj2.setSource(cam2_source)
 
 time.sleep(1)
 
@@ -56,6 +49,22 @@ img = np.zeros(shape = (height, width, 3), dtype = np.uint8)
 
 #remove scientific notation
 np.set_printoptions(suppress = True)
+
+#set up tag detector + estimator
+detector = rptag.AprilTagDetector()
+detector.addFamily("tag36h11")
+DETECTION_MARGIN_THRESHOLD = 90
+
+#tagsize (m), fx, fy, cx, cy, tagsize
+tag_estimator= rptag.AprilTagPoseEstimator(
+    rptag.AprilTagPoseEstimator.Config(
+        0.1651, 
+        699.3778103158814, 
+        677.7161226393544, 
+        345.6059345433618, 
+        207.12741326228522
+    )
+)
 
 #load yolo model
 modelPath = "/home/vision/Documents/Code/best.pt"
@@ -97,8 +106,6 @@ def cam1TagDetect():
         if cam1_frame_time == 0:
             output_stream.notifyError(cam1_input_stream.getError())
 
-        #vision_table.putString("Cam1 Stream", mjstring1)
-
         #setting up tag info lists           
         x_list = []
         y_list = []
@@ -107,11 +114,9 @@ def cam1TagDetect():
         y_euler_list = []
         z_euler_list = []
         bestID = -1
-
-        #set up tag detector
-        detector = robotpy_apriltag.AprilTagDetector()
-        detector.addFamily("tag36h11")
-        DETECTION_MARGIN_THRESHOLD = 90
+        bestX = -1
+        bestY = -1
+        bestZ = -1
 
         #grayscale frame + detect
         gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
@@ -121,12 +126,17 @@ def cam1TagDetect():
         filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
         filter_tags = [tag for tag in filter_tags if ((tag.getId() > 0) & (tag.getId() < 17))]
         
+        #setting up best tag stuff
         if len(filter_tags) > 0:
             bestTag = filter_tags[0]
             for tag in filter_tags:
                 if tag.getDecisionMargin() > bestTag.getDecisionMargin():
                     bestTag = tag
             bestID = bestTag.getDecisionMargin()
+            bestTagPos = tag_estimator.estimate(bestTag)
+            bestX = bestTagPos.x
+            bestY = bestTagPos.y
+            bestZ = bestTagPos.z                        
 
         #send detections info over network tables
         for tag in filter_tags:
@@ -135,8 +145,8 @@ def cam1TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y)
-            y_list.insert(0, (center.x)
+            x_list.insert(0, (center.y))
+            y_list.insert(0, (center.x))
             id_list.insert(0, tag_id)
             z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
@@ -161,18 +171,11 @@ def cam1TagDetect():
         vision_table.putNumberArray("Y Coords", y_list)
         vision_table.putNumberArray("Z Euler Angles", z_euler_list)
         vision_table.putNumber("Best Tag ID", bestID)
+        vision_table.putNumber("Best Tag X", bestX)
+        vision_table.putNumber("Best Tag Y", bestY)
+        vision_table.putNumber("Best Tag Z", bestZ)
         # vision_table.putNumberArray("X Euler Angles", x_euler_list)
         # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
-
-        
-        #print(x_euler_list)
-        #print(y_euler_list)
-        #print(z_euler_list)
-        print(id_list)
-        #print(x_list)
-        #print(y_list)
-        #print(z_euler_list)
-        #print("\n")
   
 def cam2RingDetect():
     while True:
@@ -238,11 +241,6 @@ def cam3TagDetect():
         z_euler_list = []
         bestID = -1
 
-        #set up tag detector
-        detector = robotpy_apriltag.AprilTagDetector()
-        detector.addFamily("tag36h11")
-        DETECTION_MARGIN_THRESHOLD = 75
-
         #grayscale frame + detect
         gray_img = cv2.cvtColor(cam1_input_img, cv2.COLOR_BGR2GRAY)
         tag_info = detector.detect(gray_img)
@@ -265,8 +263,8 @@ def cam3TagDetect():
             homography = tag.getHomographyMatrix()
             euler_list = rotationMatrixToEulerAngles(homography)
 
-            x_list.insert(0, (center.y)
-            y_list.insert(0, (center.x)
+            x_list.insert(0, (center.y))
+            y_list.insert(0, (center.x))
             id_list.insert(0, tag_id)
             z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
@@ -285,7 +283,6 @@ def cam3TagDetect():
             if len(z_euler_list) > 10:
                 x_list.pop()
 
-
         vision_table.putNumberArray("Front IDs", id_list)
         vision_table.putNumberArray("Front X Coords", x_list)
         vision_table.putNumberArray("Front Y Coords", y_list)
@@ -293,16 +290,6 @@ def cam3TagDetect():
         vision_table.putNumber("Front Best Tag ID", bestID)
         # vision_table.putNumberArray("X Euler Angles", x_euler_list)
         # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
-
-        
-        #print(x_euler_list)
-        #print(y_euler_list)
-        #print(z_euler_list)
-        print(id_list)
-        #print(x_list)
-        #print(y_list)
-        #print(z_euler_list)
-        #print("\n")
 
 def main():
         #set up threads and run
