@@ -11,10 +11,9 @@ from cscore import VideoMode
 import cv2
 from ultralytics import YOLO
 import robotpy_apriltag as rptag
-from wpimath import Transform3d;
-from wpimath import Rotation2d;
+from wpimath.geometry import Transform3d
 from ntcore import NetworkTableInstance as nt
-
+import ntcore
 #set up network tables
 inst = nt.getDefault()
 inst.startClient4("visiontwhs")
@@ -56,15 +55,8 @@ detector.addFamily("tag36h11")
 DETECTION_MARGIN_THRESHOLD = 90
 
 #tagsize (m), fx, fy, cx, cy, tagsize
-tag_estimator= rptag.AprilTagPoseEstimator(
-    rptag.AprilTagPoseEstimator.Config(
-        0.1651, 
-        699.3778103158814, 
-        677.7161226393544, 
-        345.6059345433618, 
-        207.12741326228522
-    )
-)
+tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.1651, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
+tag_estimator = rptag.AprilTagPoseEstimator(tag_estimator_conf)
 
 #load yolo model
 modelPath = "/home/vision/Documents/Code/best.pt"
@@ -132,6 +124,8 @@ def cam1TagDetect():
         x_list = []
         y_list = []
         id_list = []
+        hom_list = []
+        ham_list = []
         x_euler_list = []
         y_euler_list = []
         z_euler_list = []
@@ -154,11 +148,14 @@ def cam1TagDetect():
             for tag in filter_tags:
                 if tag.getDecisionMargin() > bestTag.getDecisionMargin():
                     bestTag = tag
-            bestID = bestTag.getDecisionMargin()
+            bestID = bestTag.getId()
             bestTagPos = tag_estimator.estimate(bestTag)
             bestX = bestTagPos.x
             bestY = bestTagPos.y
-            bestZ = bestTagPos.z                        
+            bestZ = bestTagPos.z
+            vision_table.putNumber("Best Timestamp", ntcore._now())
+            vision_table.putNumberArray("Best Hom", bestTag.getHomography())
+            vision_table.putNumber("Best Ham", bestTag.getHamming())                      
 
         #send detections info over network tables
         for tag in filter_tags:
@@ -170,6 +167,8 @@ def cam1TagDetect():
             x_list.insert(0, (center.y))
             y_list.insert(0, (center.x))
             id_list.insert(0, tag_id)
+            #hom_list.insert(0, homography)
+            ham_list.insert(0, tag.getHamming())
             z_euler_list.insert(0, euler_list[2])
             # x_euler_list.insert(euler_list[0] * 1000)
             # y_euler_list.insert(euler_list[1] * 1000)
@@ -185,11 +184,14 @@ def cam1TagDetect():
                 id_list.pop()
 
             if len(z_euler_list) > 10:
-                id_list.pop()
+                z_euler_list.pop()
 
-            
+            # if len(hom_list) > 10:
+            #     hom_list.pop()
 
-
+            # if len(ham_list) > 10:
+            #     ham_list.pop()
+        print(hom_list)
         vision_table.putNumberArray("IDs", id_list)
         vision_table.putNumberArray("X Coords", x_list)
         vision_table.putNumberArray("Y Coords", y_list)
@@ -198,6 +200,7 @@ def cam1TagDetect():
         vision_table.putNumber("Best Tag X", bestX)
         vision_table.putNumber("Best Tag Y", bestY)
         vision_table.putNumber("Best Tag Z", bestZ)
+        # vision_table.putNumberArray("Hammings", ham_list)
         # vision_table.putNumberArray("X Euler Angles", x_euler_list)
         # vision_table.putNumberArray("Y Euler Angles", y_euler_list)
 
