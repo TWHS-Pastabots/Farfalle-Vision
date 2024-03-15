@@ -54,8 +54,8 @@ detector = rptag.AprilTagDetector()
 detector.addFamily("tag36h11")
 DETECTION_MARGIN_THRESHOLD = 90
 
-#tagsize (m), fx, fy, cx, cy, tagsize
-tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.1651, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
+#tagsize (m), fx, fy, cx, cy
+tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.2159, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
 tag_estimator = rptag.AprilTagPoseEstimator(tag_estimator_conf)
 
 #load yolo model
@@ -150,9 +150,9 @@ def cam1TagDetect():
                     bestTag = tag
             bestID = bestTag.getId()
             bestTagPos = tag_estimator.estimate(bestTag)
-            bestX = bestTagPos.x
-            bestY = bestTagPos.y
-            bestZ = bestTagPos.z
+            bestX = bestTagPos.getX()
+            bestY = bestTagPos.getY()
+            bestZ = bestTagPos.getZ()
             vision_table.putNumber("Best Timestamp", ntcore._now())
             vision_table.putNumberArray("Best Hom", bestTag.getHomography())
             vision_table.putNumber("Best Ham", bestTag.getHamming())                      
