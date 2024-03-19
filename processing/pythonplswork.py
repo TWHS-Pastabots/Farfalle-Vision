@@ -4,11 +4,11 @@ import threading
 import numpy as np
 from cscore import CameraServer as cs
 from cscore import VideoSource as vs
-from cscore import CvSink as sink
+#from cscore import CvSink as sink
 import cv2
 #from ultralytics import YOLO
 import robotpy_apriltag as rptag
-from wpimath.geometry import Transform3d, Translation3d, Rotation3d
+#from wpimath.geometry import Transform3d, Translation3d, Rotation3d
 from ntcore import NetworkTableInstance as nt
 import ntcore
 
@@ -36,7 +36,7 @@ usb1.setResolution(width, height)
 usb2.setFPS(fps)
 
 # Insert dev path later
-usb3 = cs.startAutomaticCapture(name = "cam3", path = "")
+usb3 = cs.startAutomaticCapture(name = "cam3", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-video-index0")
 usb3.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
 usb3.setResolution(width, height)
 usb3.setFPS(fps)
@@ -46,8 +46,8 @@ cam2_input_stream = cs.getVideo(camera = usb2)
 cam3_input_stream = cs.getVideo(camera = usb3)
 
 # Setting up sink for cam2
-cam2_sink = sink("cam2_sink")
-cam2_sink.setSource(usb2)
+#cam2_sink = sink("cam2_sink")
+#cam2_sink.setSource(usb2)
 
 time.sleep(0.5)
 
@@ -61,19 +61,11 @@ np.set_printoptions(suppress = True)
 detector = rptag.AprilTagDetector()
 detector.addFamily("tag36h11")
 
-detector2 = rptag.AprilTagDetector()
-detector2.addFamily("tag36h11")
-
-detector3 = rptag.AprilTagDetector()
-detector3.addFamily("tag36h11")
-
 DETECTION_MARGIN_THRESHOLD = 90
 
 # Tagsize (m), fx, fy, cx, cy
 tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.2159, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
 tag_estimator = rptag.AprilTagPoseEstimator(tag_estimator_conf)
-tag_estimator2 = rptag.AprilTagPoseEstimator(tag_estimator_conf)
-tag_estimator3 = rptag.AprilTagPoseEstimator(tag_estimator_conf)
 
 # load yolo model
 #modelPath = "/home/vision/Documents/Code/best.pt"
