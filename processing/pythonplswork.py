@@ -1,12 +1,13 @@
-import math
 import time
-import threading
 import numpy as np
 from cscore import CameraServer as cs
 from cscore import VideoSource as vs
 import cv2
 import robotpy_apriltag as rptag
 from ntcore import NetworkTableInstance as nt
+from wpimath.geometry import Transform3d
+from wpimath.geometry import Translation3d
+from wpimath.geometry import Rotation3d
 import ntcore
 
 # Set up network tables
@@ -19,7 +20,7 @@ time.sleep(0.5)
 
 width = 640
 height = 480
-fps = 15
+fps = 20
 
 # Set up cameras
 usb1 = cs.startAutomaticCapture(name = "Launcher Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0")
@@ -27,15 +28,15 @@ usb1.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
 usb1.setResolution(width, height)
 usb1.setFPS(fps)
 
-usb2 = cs.startAutomaticCapture(name = "Left Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0")
-usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
-usb1.setResolution(width, height)
-usb2.setFPS(fps)
+# usb2 = cs.startAutomaticCapture(name = "Left Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0")
+# usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+# usb1.setResolution(width, height)
+# usb2.setFPS(fps)
 
-usb3 = cs.startAutomaticCapture(name = "Right Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-video-index0")
-usb3.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
-usb3.setResolution(width, height)
-usb3.setFPS(fps)
+# usb3 = cs.startAutomaticCapture(name = "Right Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-video-index0")
+# usb3.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
+# usb3.setResolution(width, height)
+# usb3.setFPS(fps)
 
 usb4 = cs.startAutomaticCapture(name = "Intake Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.3:1.0-video-index0")
 usb4.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
@@ -43,8 +44,8 @@ usb4.setResolution(width, height)
 usb4.setFPS(fps)
 
 cam1_input_stream = cs.getVideo(camera = usb1)
-cam2_input_stream = cs.getVideo(camera = usb2)
-cam3_input_stream = cs.getVideo(camera = usb3)
+# cam2_input_stream = cs.getVideo(camera = usb2)
+# cam3_input_stream = cs.getVideo(camera = usb3)
 cam4_input_stream = cs.getVideo(camera = usb4)
 
 # Setting up sink for cam2
@@ -63,11 +64,12 @@ np.set_printoptions(suppress = True)
 detector = rptag.AprilTagDetector()
 detector.addFamily("tag36h11")
 
-DETECTION_MARGIN_THRESHOLD = 90
+DETECTION_MARGIN_THRESHOLD = 100
 
 # Tagsize (m), fx, fy, cx, cy
-tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.2159, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
+tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.1651, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
 tag_estimator = rptag.AprilTagPoseEstimator(tag_estimator_conf)
+tag_layout = rptag.AprilTagFieldLayout(rptag.AprilTagField.k2024Crescendo)
 
 # load yolo model
 #modelPath = "/home/vision/Documents/Code/best.pt"
@@ -101,32 +103,11 @@ time.sleep(0.5)
 #     return np.array([x, y, z])
 
 
-# Tag_size_meters = 0.1
-# Focal_Length_Pixels = 600
-# FOV_horizontal_degrees = 60  # Horizontal field of view of the camera in degrees
-# FOV_vertical_degrees = 40    # Vertical field of view of the camera in degrees
-
-# def calcDistanceToTag(x_tag_pixels, y_tag_pixels):
-#     # Calculate the angle of the AprilTag from the center of the image
-#     angle_x = (x_tag_pixels - width / 2) * (FOV_horizontal_degrees / width)
-#     angle_y = (y_tag_pixels - height / 2) * (FOV_vertical_degrees / height)
-
-#     # Calculate the distance to the AprilTag using trigonometry (assuming small angles)
-#     distance_x = Tag_size_meters / (2 * math.tan(math.radians(angle_x / 2)))
-#     distance_y = Tag_size_meters / (2 * math.tan(math.radians(angle_y / 2)))
-
-#     # Average the distances from both horizontal and vertical angles
-#     distance = (distance_x + distance_y) / 2
-
-#      #hoping this works and ideally should return the distance to the AprilTag based on the camera
-#     return distance
-
-
 # Detects apriltags for cam1
 def cam1TagDetect():
         cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
 
-        if cam1_frame_time == 0:#If frame time is zero then there was no time between the last frame so no new data
+        if cam1_frame_time == 0: # If frame time is zero then there was no time between the last frame so no new data
             output_stream.notifyError(cam1_input_stream.getError())
 
         # Setting up tag info lists           
@@ -170,7 +151,12 @@ def cam1TagDetect():
             tag_id = tag.getId()
             # homography = tag.getHomographyMatrix()
             # euler_list = rotationMatrixToEulerAngles(homography)
-            tag_pos = tag_estimator.estimate(tag)
+            tag_transform = tag_estimator.estimate(tag)
+            tag_pos = tag_layout.getTagPose(tag_id)
+            tag_pos = Transform3d(
+                Translation3d(tag_pos.X(), tag_pos.Y(), tag_pos.Z()), 
+                Rotation3d(-tag_pos.rotation().X(), -tag_pos.rotation().Y(), -tag_pos.rotation().Z()))
+
             x_list.insert(0, tag_pos.X())
             y_list.insert(0, tag_pos.Y())
             z_list.insert(0, tag_pos.Z())
