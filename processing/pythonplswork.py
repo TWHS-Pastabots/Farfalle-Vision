@@ -160,7 +160,8 @@ def cam1TagDetect():
                 Rotation3d(-tag_camera_pos.rotation().X() - np.pi, -tag_camera_pos.rotation().Y(), -tag_camera_pos.rotation().Z() - np.pi)
             )
             tag_camera_pos = CoordinateSystem.convert(tag_camera_pos, CoordinateSystem.EDN(), CoordinateSystem.NWU())
-            robot_pos = tag_field_pos.plus(tag_camera_pos.inverse()).plus(cam1toRobot.inverse())
+            robot_pos = tag_field_pos.transformBy(tag_camera_pos.inverse())
+            robot_pos = robot_pos.transformBy(cam1toRobot.inverse())
 
 
             x_list.insert(0, robot_pos.X())
