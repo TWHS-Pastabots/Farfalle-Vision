@@ -50,6 +50,7 @@ cam1_input_stream = cs.getVideo(camera = usb1)
 cam4_input_stream = cs.getVideo(camera = usb4)
 
 cam1toRobot = Transform3d(Translation3d(-0.2115, 0.0127, 0.368), Rotation3d(0, units.degreesToRadians(-30), units.degreesToRadians(180)))
+
 # Setting up sink for cam2
 #cam2_sink = sink("cam2_sink")
 #cam2_sink.setSource(usb2)
@@ -77,7 +78,7 @@ tag_layout = rptag.AprilTagFieldLayout(rptag.AprilTagField.k2024Crescendo)
 #modelPath = "/home/vision/Documents/Code/best.pt"
 #model = YOLO(modelPath, task = "detect")
 
-time.sleep(0.5)
+time.sleep(0.1)
 
 # Checks if a matrix is a valid rotation matrix.
 # def isRotationMatrix(R):
@@ -157,7 +158,7 @@ def cam1TagDetect():
             tag_camera_pos = tag_estimator.estimate(tag)
             tag_camera_pos = Transform3d(
                 Translation3d(tag_camera_pos.X(), tag_camera_pos.Y(), tag_camera_pos.Z()), 
-                Rotation3d(-tag_camera_pos.rotation().X() - np.pi, -tag_camera_pos.rotation().Y(), -tag_camera_pos.rotation().Z() - np.pi)
+                Rotation3d(-tag_camera_pos.rotation().X() - np.pi, -tag_camera_pos.rotation().Y(), tag_camera_pos.rotation().Z() - np.pi)
             )
             tag_camera_pos = CoordinateSystem.convert(tag_camera_pos, CoordinateSystem.EDN(), CoordinateSystem.NWU())
             robot_pos = tag_field_pos.transformBy(tag_camera_pos.inverse())
