@@ -156,11 +156,16 @@ def cam1TagDetect():
             # euler_list = rotationMatrixToEulerAngles(homography)
             tag_field_pos = tag_layout.getTagPose(tag_id)
             tag_camera_pos = tag_estimator.estimate(tag)
+            
             tag_camera_pos = Transform3d(
                 Translation3d(tag_camera_pos.X(), tag_camera_pos.Y(), tag_camera_pos.Z()), 
                 Rotation3d(-tag_camera_pos.rotation().X() - np.pi, -tag_camera_pos.rotation().Y(), tag_camera_pos.rotation().Z() - np.pi)
             )
-            tag_camera_pos = CoordinateSystem.convert(tag_camera_pos, CoordinateSystem.EDN(), CoordinateSystem.NWU())
+
+            tag_camera_pos = Transform3d(
+                CoordinateSystem.convert(tag_camera_pos.translation(), CoordinateSystem.EDN(), CoordinateSystem.NWU()),
+                CoordinateSystem.convert(tag_camera_pos.rotation(),CoordinateSystem.EDN(), CoordinateSystem.NWU())
+            )
             robot_pos = tag_field_pos.transformBy(tag_camera_pos.inverse())
             robot_pos = robot_pos.transformBy(cam1toRobot.inverse())
 
