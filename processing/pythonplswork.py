@@ -5,12 +5,8 @@ from cscore import VideoSource as vs
 import cv2
 import robotpy_apriltag as rptag
 from ntcore import NetworkTableInstance as nt
-from wpimath.geometry import Transform3d
-from wpimath.geometry import Translation3d
-from wpimath.geometry import Rotation3d
 import ntcore
-import wpimath.units as units
-from wpimath.geometry import CoordinateSystem
+
 # Set up network tables
 inst = nt.getDefault()
 inst.startClient4("visiontwhs")
@@ -21,7 +17,7 @@ time.sleep(0.5)
 
 width = 640
 height = 480
-fps = 20
+fps = 15
 
 # Set up cameras
 usb1 = cs.startAutomaticCapture(name = "Launcher Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.1:1.0-video-index0")
@@ -31,7 +27,7 @@ usb1.setFPS(fps)
 
 # usb2 = cs.startAutomaticCapture(name = "Left Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-video-index0")
 # usb2.setConnectionStrategy(vs.ConnectionStrategy.kConnectionKeepOpen)
-# usb1.setResolution(width, height)
+# usb2.setResolution(width, height)
 # usb2.setFPS(fps)
 
 # usb3 = cs.startAutomaticCapture(name = "Right Cam", path = "/dev/v4l/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.4:1.0-video-index0")
@@ -49,8 +45,6 @@ cam1_input_stream = cs.getVideo(camera = usb1)
 # cam3_input_stream = cs.getVideo(camera = usb3)
 cam4_input_stream = cs.getVideo(camera = usb4)
 
-cam1toRobot = Transform3d(Translation3d(-0.2115, 0.0127, 0.368), Rotation3d(0, units.degreesToRadians(-30), units.degreesToRadians(180)))
-
 # Setting up sink for cam2
 #cam2_sink = sink("cam2_sink")
 #cam2_sink.setSource(usb2)
@@ -67,18 +61,17 @@ np.set_printoptions(suppress = True)
 detector = rptag.AprilTagDetector()
 detector.addFamily("tag36h11")
 
-DETECTION_MARGIN_THRESHOLD = 110
+DETECTION_MARGIN_THRESHOLD = 90
 
 # Tagsize (m), fx, fy, cx, cy
 tag_estimator_conf = rptag.AprilTagPoseEstimator.Config(0.1651, 699.3778103158814, 677.7161226393544, 345.6059345433618, 207.12741326228522)
 tag_estimator = rptag.AprilTagPoseEstimator(tag_estimator_conf)
-tag_layout = rptag.AprilTagFieldLayout(rptag.AprilTagField.k2024Crescendo)
 
 # load yolo model
 #modelPath = "/home/vision/Documents/Code/best.pt"
 #model = YOLO(modelPath, task = "detect")
 
-time.sleep(0.1)
+time.sleep(0.5)
 
 # Checks if a matrix is a valid rotation matrix.
 # def isRotationMatrix(R):
@@ -106,11 +99,32 @@ time.sleep(0.1)
 #     return np.array([x, y, z])
 
 
+# Tag_size_meters = 0.1
+# Focal_Length_Pixels = 600
+# FOV_horizontal_degrees = 60  # Horizontal field of view of the camera in degrees
+# FOV_vertical_degrees = 40    # Vertical field of view of the camera in degrees
+
+# def calcDistanceToTag(x_tag_pixels, y_tag_pixels):
+#     # Calculate the angle of the AprilTag from the center of the image
+#     angle_x = (x_tag_pixels - width / 2) * (FOV_horizontal_degrees / width)
+#     angle_y = (y_tag_pixels - height / 2) * (FOV_vertical_degrees / height)
+
+#     # Calculate the distance to the AprilTag using trigonometry (assuming small angles)
+#     distance_x = Tag_size_meters / (2 * math.tan(math.radians(angle_x / 2)))
+#     distance_y = Tag_size_meters / (2 * math.tan(math.radians(angle_y / 2)))
+
+#     # Average the distances from both horizontal and vertical angles
+#     distance = (distance_x + distance_y) / 2
+
+#      #hoping this works and ideally should return the distance to the AprilTag based on the camera
+#     return distance
+
+
 # Detects apriltags for cam1
 def cam1TagDetect():
         cam1_frame_time, cam1_input_img = cam1_input_stream.grabFrame(img)
 
-        if cam1_frame_time == 0: # If frame time is zero then there was no time between the last frame so no new data
+        if cam1_frame_time == 0:#If frame time is zero then there was no time between the last frame so no new data
             output_stream.notifyError(cam1_input_stream.getError())
 
         # Setting up tag info lists           
@@ -154,26 +168,11 @@ def cam1TagDetect():
             tag_id = tag.getId()
             # homography = tag.getHomographyMatrix()
             # euler_list = rotationMatrixToEulerAngles(homography)
-            tag_field_pos = tag_layout.getTagPose(tag_id)
-            tag_camera_pos = tag_estimator.estimate(tag)
-            
-            tag_camera_pos = Transform3d(
-                Translation3d(tag_camera_pos.X(), tag_camera_pos.Y(), tag_camera_pos.Z()), 
-                Rotation3d(-tag_camera_pos.rotation().X() - np.pi, -tag_camera_pos.rotation().Y(), tag_camera_pos.rotation().Z() - np.pi)
-            )
-
-            tag_camera_pos = Transform3d(
-                CoordinateSystem.convert(tag_camera_pos.translation(), CoordinateSystem.EDN(), CoordinateSystem.NWU()),
-                CoordinateSystem.convert(tag_camera_pos.rotation(),CoordinateSystem.EDN(), CoordinateSystem.NWU())
-            )
-            robot_pos = tag_field_pos.transformBy(tag_camera_pos.inverse())
-            robot_pos = robot_pos.transformBy(cam1toRobot.inverse())
-
-
-            x_list.insert(0, robot_pos.X())
-            y_list.insert(0, robot_pos.Y())
-            z_list.insert(0, robot_pos.Z())
-            yaw_list.insert(0, robot_pos.rotation().Z())
+            tag_pos = tag_estimator.estimate(tag)
+            x_list.insert(0, tag_pos.X())
+            y_list.insert(0, tag_pos.Y())
+            z_list.insert(0, tag_pos.Z())
+            yaw_list.insert(0, tag_pos.rotation().Z())
             timestamp_list.insert(0, ntcore._now())
             # x_list.insert(0, (center.y))
             # y_list.insert(0, (center.x))
@@ -202,7 +201,7 @@ def cam1TagDetect():
                 timestamp_list.pop()
             # if len(z_euler_list) > 10:
             #     z_euler_list.pop()
-
+        print(len(id_list))
         vision_table.putNumberArray("IDs", id_list)
         vision_table.putNumberArray("X Coords", x_list)
         vision_table.putNumberArray("Y Coords", y_list)
@@ -488,8 +487,8 @@ def main():
     while True:
         try:
             cam1TagDetect()
-            #cam2TagDetect()
-            #cam3TagDetect()
+            # cam2TagDetect()
+            # cam3TagDetect()
         except:
             continue
 
