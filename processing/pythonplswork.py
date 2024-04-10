@@ -114,12 +114,21 @@ def cam1TagDetect():
 
         # Process detections
         for tag in filter_tags:
-
+            corners = tuple(
+                 tag.getCorner(0).x,
+                 tag.getCorner(0).y,
+                 tag.getCorner(1).x,
+                 tag.getCorner(1).y,
+                 tag.getCorner(2).x,
+                 tag.getCorner(2).y,
+                 tag.getCorner(3).x,
+                 tag.getCorner(3).y
+            )
             # object space rotation vector and translation vector
             _, r_vec, t_vec = cv2.solvePnP(
                 obj_pts,
                 np.array(
-                    tag.getCorners(), 
+                    tag.getCorners(cornersBuf = corners), 
                     dtype=np.float64
                 ), 
                 cameraMatrix = np.array(intrinsics_mat), 
