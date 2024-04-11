@@ -66,26 +66,28 @@ fy = 677.7161226393544
 cx = 345.6059345433618
 cy = 207.12741326228522
 
-intrinsics_mat = [
-    [fx, 0, cx],
+intrinsics_mat = np.array(
+    [[fx, 0, cx],
     [0, fy, cy],
-    [0, 0, 1]
-]
+    [0, 0, 1]],
+    dtype = np.float64
+)
 
-distortions = [ 
-    0.14382207979312617,
+distortions = np.array(
+    [0.14382207979312617,
     -0.9851192814987014,
     -0.018168751047242335,
     0.011034504043795105,
-    1.9833437176538498
-]
+    1.9833437176538498],
+    dtype = np.float64
+)
 
 t = tag_size_m / 2
 obj_pts = np.array(
-    [[[-t, -t, 0], \
+    [[-t, -t, 0], \
     [t, -t, 0], \
     [t, t, 0], \
-    [-t, t, 0]]], \
+    [-t, t, 0]], \
     dtype=np.float32)
 
 # Tagsize (m), fx, fy, cx, cy
@@ -114,25 +116,19 @@ def cam1TagDetect():
 
         # Process detections
         for tag in filter_tags:
-            corners = tuple(
-                 tag.getCorner(0).x,
-                 tag.getCorner(0).y,
-                 tag.getCorner(1).x,
-                 tag.getCorner(1).y,
-                 tag.getCorner(2).x,
-                 tag.getCorner(2).y,
-                 tag.getCorner(3).x,
-                 tag.getCorner(3).y
+            corners = np.array(
+                [[tag.getCorner(0).x, tag.getCorner(0).y],
+                [tag.getCorner(1).x, tag.getCorner(1).y],
+                [tag.getCorner(2).x, tag.getCorner(2).y],
+                [tag.getCorner(3).x, tag.getCorner(3).y]],
+                dtype = np.float64
             )
             # object space rotation vector and translation vector
             _, r_vec, t_vec = cv2.solvePnP(
-                obj_pts,
-                np.array(
-                    tag.getCorners(cornersBuf = corners), 
-                    dtype=np.float64
-                ), 
-                cameraMatrix = np.array(intrinsics_mat), 
-                distCoeffs = np.array(distortions),
+                objectPoints = obj_pts,
+                imagePoints = corners,
+                cameraMatrix = np.asarray(intrinsics_mat), 
+                distCoeffs = np.asarray(distortions),
                 flags = cv2.SOLVEPNP_SQPNP
             )
     
@@ -156,10 +152,9 @@ def cam1TagDetect():
             ]
             
             #Serialized tag information
-            tag_serial_string = tag.getId() + " " + T_nt[0] + " " + T_nt[1] + " " + T_nt[2] + " "
-            tag_serial_string  += R_nt[0] + " " + R_nt[1] + " " + R_nt[2] + " " + R_nt[3] + " "
-            tag_serial_string += ntcore._now()       
-            
+            tag_serial_string = str(tag.getId()) + " " + str(T_nt[0]) + " " + str(T_nt[1]) + " " + str(T_nt[2])+ " "
+            tag_serial_string  += str(R_nt[0]) + " " + str(R_nt[1]) + " " + str(R_nt[2]) + " " + str(R_nt[3]) + " "
+            tag_serial_string += str(ntcore._now())       
             serialized_tags_list.insert(0, tag_serial_string)
 
             #pop list in case they get too big to avoid memory issues
