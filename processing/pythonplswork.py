@@ -84,10 +84,10 @@ distortions = np.array(
 
 t = tag_size_m / 2
 obj_pts = np.array(
-    [[-t, -t, 0], \
-    [t, -t, 0], \
-    [t, t, 0], \
-    [-t, t, 0]], \
+    [[-t, -t, 0],
+    [t, -t, 0],
+    [t, t, 0],
+    [-t, t, 0]],
     dtype=np.float32)
 
 # Tagsize (m), fx, fy, cx, cy
@@ -116,6 +116,8 @@ def cam1TagDetect():
 
         # Process detections
         for tag in filter_tags:
+
+            # Get corners of AprilTag
             corners = np.array(
                 [[tag.getCorner(0).x, tag.getCorner(0).y],
                 [tag.getCorner(1).x, tag.getCorner(1).y],
@@ -123,7 +125,8 @@ def cam1TagDetect():
                 [tag.getCorner(3).x, tag.getCorner(3).y]],
                 dtype = np.float64
             )
-            # object space rotation vector and translation vector
+
+            # Get tag space rotation vector and translation vector with solvePnP()
             _, r_vec, t_vec = cv2.solvePnP(
                 objectPoints = obj_pts,
                 imagePoints = corners,
@@ -132,7 +135,7 @@ def cam1TagDetect():
                 flags = cv2.SOLVEPNP_SQPNP
             )
     
-            # convert object space to camera space
+            # Convert tag space to camera space
             r_mat = cv2.Rodrigues(r_vec)[0]
 
             # T = -r^T * t
@@ -151,16 +154,17 @@ def cam1TagDetect():
                 float(R_q[3]),
             ]
             
-            #Serialized tag information
+            # Serialized tag information
             tag_serial_string = str(tag.getId()) + " " + str(T_nt[0]) + " " + str(T_nt[1]) + " " + str(T_nt[2])+ " "
             tag_serial_string  += str(R_nt[0]) + " " + str(R_nt[1]) + " " + str(R_nt[2]) + " " + str(R_nt[3]) + " "
             tag_serial_string += str(ntcore._now())       
             serialized_tags_list.insert(0, tag_serial_string)
 
-            #pop list in case they get too big to avoid memory issues
+            # Pop list in case it get too big to avoid memory issues
             if len(serialized_tags_list) > 10:
                 serialized_tags_list.pop()
-
+        
+        # Send serialized tags over network tables
         vision_table.putStringArray("Serialized Tags", serialized_tags_list)
 
 # def cam2TagDetect():
